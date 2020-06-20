@@ -15,7 +15,6 @@ public class Module {
         clickhouseRepository = new ClickhouseRepositoryImpl(config);
         decoder = new JsonDecoder();
         clickhouseService =  new ClickhouseServiceImpl(
-                2048,
                 clickhouseRepository,
                 decoder,
                 100, 5

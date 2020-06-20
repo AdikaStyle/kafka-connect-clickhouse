@@ -10,11 +10,9 @@ import java.util.Map;
 public class ClickhouseRepositoryImpl implements ClickhouseRepository {
     private final Map<String, String> config;
     private Connection connection;
-    private final LruCache<Integer, String> insertQueryCache; // Hash(columns) => Insert SQL Statement
 
     public ClickhouseRepositoryImpl(Map<String, String> config) {
         this.config = config;
-        insertQueryCache = new LruCache<>(2048);
     }
 
     @Override
@@ -49,13 +47,9 @@ public class ClickhouseRepositoryImpl implements ClickhouseRepository {
 
     @Override
     public int executeBatch(String tableName, List<ColumnDef> columns, Collection<String> values, Decoder decoder) throws Exception {
-        String insertSql = this.insertQueryCache.get(columns.hashCode());
-        if (insertSql == null) {
-            insertSql = InsertStatementHelper.toInsertStatement(tableName, columns);
-            this.insertQueryCache.put(columns.hashCode(), insertSql);
-        }
+        String query = InsertStatementHelper.toInsertStatement(tableName, columns);
 
-        PreparedStatement stmt = this.connection.prepareStatement(insertSql);
+        PreparedStatement stmt = this.connection.prepareStatement(query);
         for (Decoder.Decodeable value : decoder.decode(values)) {
             for (ColumnDef column : columns) {
                 stmt.setObject(column.getPosition(), value);

@@ -15,7 +15,6 @@ public class ClickhouseSink extends SinkConnector {
     private String password;
     private String database;
     private String table;
-    private String tableSelector;
 
     public void start(Map<String, String> map) {
         host = map.get(ClickhouseConfigDef.HOST);
@@ -23,7 +22,6 @@ public class ClickhouseSink extends SinkConnector {
         password = map.get(ClickhouseConfigDef.PASSWORD);
         database = map.get(ClickhouseConfigDef.DATABASE);
         table = map.get(ClickhouseConfigDef.TABLE);
-        tableSelector = map.get(ClickhouseConfigDef.TABLE_SELECTOR);
     }
 
     public void stop() {
@@ -40,7 +38,6 @@ public class ClickhouseSink extends SinkConnector {
             config.put(ClickhouseConfigDef.PASSWORD, password);
             config.put(ClickhouseConfigDef.DATABASE, database);
             config.put(ClickhouseConfigDef.TABLE, table);
-            config.put(ClickhouseConfigDef.TABLE_SELECTOR, tableSelector);
 
             configs.add(config);
         }

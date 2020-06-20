@@ -2,21 +2,25 @@ package com.adikastyle.kafka.connect.clickhouse;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ClickhouseServiceImpl implements ClickhouseService {
 
-    private final LruCache<String, List<ColumnDef>> tablesCache;
+    private List<ColumnDef> tableCache;
     private final ClickhouseRepository repository;
     private final Decoder decoder;
     private final int retryBackoff;
     private final int retryCount;
 
-    public ClickhouseServiceImpl(int cacheSize, ClickhouseRepository repository, Decoder decoder, int retryBackoff, int retryCount) throws Exception {
-        this.tablesCache = new LruCache<>(cacheSize);
+    private final ReentrantLock lock;
+
+    public ClickhouseServiceImpl(ClickhouseRepository repository, Decoder decoder, int retryBackoff, int retryCount) throws Exception {
+        this.tableCache = null;
         this.repository = repository;
         this.decoder = decoder;
         this.retryBackoff = retryBackoff;
         this.retryCount = retryCount;
+        lock = new ReentrantLock();
     }
 
     @Override
@@ -36,25 +40,17 @@ public class ClickhouseServiceImpl implements ClickhouseService {
 
     @Override
     public void refreshTablesMetadata() throws InterruptedException {
-        for (String tableName : this.tablesCache.getKeysSnapshot()) {
-            for (int i = 0; i < this.retryCount; i++) {
-                try {
-                    List<ColumnDef> columns = this.repository.describeTable(tableName);
-                    this.tablesCache.put(tableName, columns);
-                } catch (Exception ex) {
-                    Thread.sleep(this.retryBackoff * (i+1));
-                }
-            }
-        }
+        this.lock.lock();
+        this.tableCache = null;
+        this.lock.unlock();
     }
 
     private int writeBatch(String tableName, Collection<String> batch) throws Exception {
-        List<ColumnDef> tableDef = tablesCache.get(tableName);
-        if (tableDef == null) {
-            tableDef = this.repository.describeTable(tableName);
-            tablesCache.put(tableName, tableDef);
-        }
+        this.lock.lock();
+        if (this.tableCache == null)
+            this.tableCache = this.repository.describeTable(tableName);
+        this.lock.unlock();
 
-        return this.repository.executeBatch(tableName, tableDef, batch, this.decoder);
+        return this.repository.executeBatch(tableName, this.tableCache, batch, this.decoder);
     }
 }

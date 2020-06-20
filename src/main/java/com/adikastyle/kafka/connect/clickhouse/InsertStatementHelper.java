@@ -1,8 +1,6 @@
 package com.adikastyle.kafka.connect.clickhouse;
 
-import java.sql.PreparedStatement;
 import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.List;
 import java.util.StringJoiner;
 
