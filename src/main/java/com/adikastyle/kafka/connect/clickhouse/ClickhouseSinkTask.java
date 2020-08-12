@@ -18,9 +18,9 @@ public class ClickhouseSinkTask extends SinkTask {
 
     public void start(Map<String, String> map) {
         try {
-            Module m = new Module(map);
-            m.monitorSchemaChanges();
-            tableName = m.getConfig().get(ClickhouseConfigDef.TABLE);
+            this.m = new Module(map);
+            this.m.monitorSchemaChanges();
+            tableName = this.m.getConfig().get(ClickhouseConfigDef.TABLE);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
